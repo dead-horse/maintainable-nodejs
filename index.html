@@ -29,6 +29,15 @@
 			document.getElementsByTagName( 'head' )[0].appendChild( link );
 		</script>
 
+		<style>
+			.yellow-label {
+				color: #e7ad52;
+			}
+			.red-label {
+				color: #c40000;
+			}
+		</style>
+
 		<!--[if lt IE 9]>
 		<script src="lib/js/html5shiv.js"></script>
 		<![endif]-->
@@ -54,12 +63,157 @@
 					## 为什么我们关注可维护性?
 				</section>
 				<section data-markdown>
-					> 程序是写给人读的，只是偶尔让计算机执行一下。
+					- 程序是写给人读的，只是偶尔让计算机执行一下
+					- 对别人好点
+					- 对未来的自己好一点
+				</section>
+
+				<section data-markdown>
+					## Code Style
+				</section>
+
+				<section data-markdown>
+					## TAB vs SPACE
+					![](http://i.imgur.com/vOWAAUK.png)
+				</section>
+				<section>
+					<h3> To semicolon or not to semicolon <span class="yellow-label">;</span></h3>
+					<h3> that is the question</h3>
 				</section>
 				<section data-markdown>
-					- 程序员大量的时间花在维护代码上
-					- 项目通常都是团队合作维护
-					- 代码
+					#### 关键不在于选择哪种格式，而在于团队统一
+
+					- [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript)
+					- [Node.js Style Guide](https://github.com/felixge/node-style-guide)
+					- [Google JavaScript Style Guide](https://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)
+				</section>
+				<section data-markdown>
+					#### 必要时采取强制措施
+
+					- [jsLint](http://www.jslint.com/)
+					- [jsHint](http://jshint.com/)
+					- [esLint](http://eslint.org/)
+					- [jscs](http://jscs.info/)
+				</section>
+
+				<section>
+					<h3> Brendan Eich 在 1995 年用了十天写出了 <span class="yellow-label">javascript</span></h3>
+				</section>
+
+				<section>
+					 <h3 style="text-align: left; margin-left: 100px;">
+						<code>[] + {} ===</code>
+						<code class="fragment yellow-label" data-fragment-index="2" style="display: inline;">'[object Object]'</code>
+					 </h3>
+					<h3 style="text-align: left; margin-left: 100px;">
+						<code class="fragment" data-fragment-index="3">{} + [] ===</code>
+						<code class="fragment yellow-label" data-fragment-index="4" style="display: inline;">0</code>
+				 </h3>
+				 <h3 style="text-align: left; margin-left: 100px;">
+					<code class="fragment" data-fragment-index="5">[] - {} ===</code>
+					<code class="fragment yellow-label" data-fragment-index="6" style="display: inline;">NaN</code>
+				 </h3>
+				 <h3 style="text-align: left; margin-left: 100px;">
+					<code class="fragment" data-fragment-index="7">{} - [] ===</code>
+					<code class="fragment yellow-label" data-fragment-index="8" style="display: inline;">-0</code>
+				 </h3>
+				</section>
+				<section data-markdown>
+					![](http://cdn01.maxviral.com/wp-content/uploads/2015/03/stare.gif?58b55d)
+				</section>
+
+				<section>
+					<pre class="javascript"><code>
+		var http = require('http');
+		var url = require('url');
+
+		http.createServer(function (req, res) {
+			var query = url.parse(req.url, true).query;
+			var name = query.name || '';
+			res.send(name.trim());
+		}).listen(3000);
+					</code></pre>
+				</section>
+
+				<section>
+					 <h4 style="text-align: left; margin-left: 100px;">
+						<code>http://localhost:3000?name=foo   </code>
+						<code class="fragment yellow-label" data-fragment-index="2" style="display: inline;">'foo'</code>
+					 </h4>
+					<h4 style="text-align: left; margin-left: 100px;">
+						<code class="fragment" data-fragment-index="3">http://localhost:3000   </code>
+						<code class="fragment yellow-label" data-fragment-index="4" style="display: inline;">''</code>
+				  </h4>
+ 					<h4 style="text-align: left; margin-left: 100px;">
+						<code class="fragment" data-fragment-index="5">http://localhost:3000?name=foo&name=bar </code>
+						<code class="fragment red-label" data-fragment-index="6" style="display: inline;">Boom!</code>
+				 </h4>
+				 <image class="fragment" data-fragment-index="7" src="./images/query_error.png" style="max-height: 300px"></image>
+				</section>
+				<section>
+					<h2><code>Node.js !== </code><span class="yellow-label">callback hell</span></h2>
+					<h3>面向未来的异步编程</h3>
+				</section>
+
+				<section>
+					<h2>Callback</h2>
+<pre class="javascript"><code>
+	function getComments(uid) {
+		proxy.getUser(uid, function (err, user) {
+			if (err) return callback(err);
+
+			proxy.getPosts(user, function (err, posts) {
+				if (err) return callback(err);
+
+				proxy.getComments(user, function (err, comments) {
+					if (err) return callback(err);
+
+					callback(null, comments);
+				});
+			});
+		});
+	}
+</code></pre>
+				</section>
+
+				<section>
+					<h2>Promise</h2>
+<pre class="javascript"><code>
+	function getComments(uid) {
+		return proxy.getUser(uid)
+			.then(proxy.getPosts.bind(proxy))
+			.then(proxy.getComments.bind(proxy));
+	}
+</code></pre>
+				</section>
+
+				<section>
+					<h2>Generator</h2>
+<pre class="javascript"><code>
+	function getComments* (uid) {
+		var user = yield proxy.getUser(uid);
+		var posts = yield proxy.getPosts(user);
+		return yield proxy.getComments(posts);
+	}
+</code></pre>
+				</section>
+				<section>
+					<h2>Async & Await</h2>
+<pre class="javascript"><code>
+	async function getComments (uid) {
+		var user = await proxy.getUser(uid);
+		var posts = await proxy.getPosts(user);
+		return await proxy.getComments(posts);
+	}
+</code></pre>
+				</section>
+
+				<section data-markdown>
+					- 最新版 node 和 iojs 皆已支持 Promise 和 Generator
+					- [bluebird](https://github.com/petkaantonov/bluebird) - 高性能的 Promise 实现。
+					- [mz](https://github.com/normalize/mz) - 让所有 Node 原生库的异步接口支持 Promise。
+					- [co](https://github.com/tj/co) - 基于 generator 的流程控制库。
+					- [babel](https://github.com/babel/babel) - 让你编写未来的 javascript。
 				</section>
 			</div>
 		</div>

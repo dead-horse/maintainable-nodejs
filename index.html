@@ -34,7 +34,10 @@
 				color: #e7ad52;
 			}
 			.red-label {
-				color: #c40000;
+				color: #f40;
+			}
+			.reveal pre code {
+				max-height: 500px;
 			}
 		</style>
 
@@ -74,7 +77,7 @@
 
 				<section data-markdown>
 					## TAB vs SPACE
-					![](http://i.imgur.com/vOWAAUK.png)
+					![](images/tab_vs_space.png)
 				</section>
 				<section>
 					<h3> To semicolon or not to semicolon <span class="yellow-label">;</span></h3>
@@ -119,9 +122,11 @@
 				 </h3>
 				</section>
 				<section data-markdown>
-					![](http://cdn01.maxviral.com/wp-content/uploads/2015/03/stare.gif?58b55d)
+					![](images/stare.gif)
 				</section>
-
+				<section>
+					<h2>陷阱重重的 Node.js</h2>
+				</section>
 				<section>
 					<pre class="javascript"><code>
 		var http = require('http');
@@ -137,18 +142,97 @@
 
 				<section>
 					 <h4 style="text-align: left; margin-left: 100px;">
-						<code>http://localhost:3000?name=foo   </code>
+						<code>GET http://localhost:3000?name=foo   </code>
 						<code class="fragment yellow-label" data-fragment-index="2" style="display: inline;">'foo'</code>
 					 </h4>
 					<h4 style="text-align: left; margin-left: 100px;">
-						<code class="fragment" data-fragment-index="3">http://localhost:3000   </code>
+						<code class="fragment" data-fragment-index="3">GET http://localhost:3000   </code>
 						<code class="fragment yellow-label" data-fragment-index="4" style="display: inline;">''</code>
 				  </h4>
  					<h4 style="text-align: left; margin-left: 100px;">
-						<code class="fragment" data-fragment-index="5">http://localhost:3000?name=foo&name=bar </code>
+						<code class="fragment" data-fragment-index="5">GET http://localhost:3000?name=foo&name=bar </code>
 						<code class="fragment red-label" data-fragment-index="6" style="display: inline;">Boom!</code>
 				 </h4>
-				 <image class="fragment" data-fragment-index="7" src="./images/query_error.png" style="max-height: 300px"></image>
+				 <img class="fragment" data-fragment-index="7" src="./images/query_error.png" style="max-height: 300px"></img>
+				</section>
+
+				<section data-transition="slide-in fade-out">
+					<h3><a href="https://github.com/koajs/qs" target="_blank">koa-qs</a></h3>
+					<img style="width: 600px" src="images/koa_qs.png"></img>
+				</section>
+				<section data-transition="fade-in slide-out">
+					<h3><a href="https://github.com/koajs/qs" target="_blank">koa-qs</a></h3>
+					<img style="width: 600px" src="images/koa_qs_1.png"></img>
+				</section>
+				<section>
+					<pre class="javascript"><code>
+	http.createServer(function (req, res) {
+	  parseBody(req, function (err, body) {
+	    if (err) {
+	      res.statusCode = 500;
+	      return res.end(err.message);
+	    }
+	    var keys = Object.keys(body).join(',');
+	    res.end(keys);
+	  });
+	}).listen(3000);
+
+	function parseBody(req, callback) {
+	  // 获取原始的请求 body
+	  rawBody(req, function (err, content) {
+	    if (err) return callback(err);
+
+	    var body = {};
+	    try {
+	      body = JSON.parse(content);
+	    } catch (err) {
+	      return callback(err);
+	    }
+	    return callback(null, body);
+	  });
+	}
+					</code></pre>
+				</section>
+				<section>
+					<h4 style="text-align: left; margin-left: 5px;">
+						<code>POST '{"foo": "bar"}'  </code>
+						<code class="fragment yellow-label" data-fragment-index="2" style="display: inline;">'foo'</code>
+					 </h4>
+					<h4 style="text-align: left; margin-left: 5px;">
+						<code class="fragment" data-fragment-index="3">POST '{}'   </code>
+						<code class="fragment yellow-label" data-fragment-index="4" style="display: inline;">''</code>
+				  </h4>
+ 					<h4 style="text-align: left; margin-left: 5px;">
+						<code class="fragment" data-fragment-index="5">POST 'null' </code>
+						<code class="fragment red-label" data-fragment-index="6" style="display: inline;">Boom!</code>
+						<code class="fragment red-label" data-fragment-index="7" style="display: inline;"> (JSON.parse('null') => null)</code>
+				 </h4>
+				 <h4 style="text-align: left; margin-left: 5px;">
+						<code class="fragment" data-fragment-index="8">POST '"hello"' </code>
+						<code class="fragment red-label" data-fragment-index="9" style="display: inline;">Boom!</code>
+						<code class="fragment red-label" data-fragment-index="10" style="display: inline;"> (JSON.parse('"hello"') => 'hello')</code>
+				 </h4>
+				</section>
+				<section>
+					<h3><a href="https://github.com/cojs/co-body" taget="_blank">co-body</a></h3>
+					<pre class="javascript"><code>
+	function parseBody(req, callback) {
+	  rawBody(req, function (err, content) {
+	    if (err) return callback(err);
+	    var body = {};
+	    try {
+	      body = JSON.parse(content);
+	      // 严格的只接受 object 作为 body
+	      if (!body || typeof body !== 'object') {
+	        throw new Error('request body must be object');
+	      }
+	    } catch (err) {
+	      return callback(err);
+	    }
+	    return callback(null, body);
+	  });
+	}
+					</code></pre>
 				</section>
 				<section>
 					<h2><code>Node.js !== </code><span class="yellow-label">callback hell</span></h2>
@@ -209,11 +293,164 @@
 				</section>
 
 				<section data-markdown>
-					- 最新版 node 和 iojs 皆已支持 Promise 和 Generator
+					- 最新版 node 和 iojs 皆已支持 Promise 和 Generator。
 					- [bluebird](https://github.com/petkaantonov/bluebird) - 高性能的 Promise 实现。
 					- [mz](https://github.com/normalize/mz) - 让所有 Node 原生库的异步接口支持 Promise。
 					- [co](https://github.com/tj/co) - 基于 generator 的流程控制库。
 					- [babel](https://github.com/babel/babel) - 让你编写未来的 javascript。
+				</section>
+
+				<section>
+					<h2><span class="yellow-label">Error Handle</span></h2>
+				</section>
+				<section>
+					<h3> 异步回调第一个函数必须是错误对象</h3>
+					<pre class="javascript"><code>
+		fs.readFile('foo.txt', function (err, content) {
+			if (err) return onerror(err);
+			return onfile(content);
+		});
+					</code></pre>
+				</section>
+				<section>
+					<h3>字符串不是错误</h3>
+					<pre class="javascript"><code>
+		if (!body) throw 'body not exist'; // wrong!
+
+		if (!body) {
+		  var error = new Error('body not exist');
+		  error.status = 404;
+		  throw error;
+		}
+					</code></pre>
+				</section>
+				<section data-transition="slide-in fade-out">
+					<h3>通过错误事件抛出错误</h3>
+					<pre class="javascript"><code  style="height:570px; max-height: 570px">
+	function Checker(url, path) {
+	  this.url = url;
+	  this.path = path;
+	  this.start();
+	};
+
+	Checker.prototype.shoot = function () {
+	  var self = this;
+	  return urllib.request(self.url)
+	    .then(function (res) {
+	      return fs.writeFile(self.path, res.data);
+	    });
+	};
+	Checker.prototype.start = function () {
+	  var self = this;
+	  setInterval(function () {
+	    self.shoot().then(noop);
+	  }, ms('1s'));
+	};
+
+	var checker = new Checker('http://www.tmall.com', 'tmall.htm');
+					</code></pre>
+				</section>
+				<section data-transition="fade-in fade-out">
+					<h3>通过错误事件抛出错误</h3>
+					<pre class="javascript"><code  style="height:570px; max-height: 570px">
+	function Checker(url, path) {
+	  this.url = url;
+	  this.path = path;
+	  this.onerror = this.onerror.bind(this);
+	  this.start();
+	};
+
+	Checker.prototype.shoot = function () {
+	  var self = this;
+	  return urllib.request(self.url)
+	    .then(function (res) {
+	      return fs.writeFile(self.path, res.data);
+	    });
+	};
+	Checker.prototype.start = function () {
+	  var self = this;
+	  setInterval(function () {
+	    self.shoot().catch(self.onerror); // 捕获 error 时间
+	  }, ms('1s'));
+	};
+	Checker.prototype.onerror = function (err) {
+	  console.error(err.stack);	 // 打印到 stderr
+	};
+
+	var checker = new Checker('http://www.tmall.com', 'tmall.html');
+					</code></pre>
+				</section>
+
+				<section data-transition="fade-in fade-out">
+					<h3>通过错误事件抛出错误</h3>
+					<pre class="javascript"><code  style="height:570px; max-height: 570px">
+	function Checker(url, path) {
+	  this.url = url;
+	  this.path = path;
+	  this.onerror = this.onerror.bind(this);
+	  this.start();
+	  EventEmitter.call(this);  // 继承 EventEmitter
+	};
+	util.inherits(Checker, EventEmitter);
+
+	Checker.prototype.shoot = function () {
+	  var self = this;
+	  return urllib.request(self.url)
+	    .then(function (res) {
+	      return fs.writeFile(self.path, res.data);
+	    });
+	};
+	Checker.prototype.start = function () {
+	  var self = this;
+	  setInterval(function () {
+	    self.shoot().catch(self.onerror); // 捕获 error 时间
+	  }, ms('1s'));
+	};
+	Checker.prototype.onerror = function (err) {
+	  this.emit('error', err);  // 触发 error 事件
+	};
+
+	var checker = new Checker('http://www.tmall.com', 'tmall.html');
+					</code></pre>
+				</section>
+				<section data-transition="fade-in slide-out">
+					<h3><a href="https://github.com/node-modules/sdk-base" target="_blank">sdk-base</a></h3>
+					<pre class="javascript"><code  style="height:570px; max-height: 570px">
+	var Base = require('sdk-base');
+	function Checker(url, path) {
+	  this.url = url;
+	  this.path = path;
+	  this.onerror = this.onerror.bind(this);
+	  this.start();
+	  Base.call(this);  // 继承 sdk-base
+	};
+	util.inherits(Checker, Base);
+
+	Checker.prototype.shoot = function () {
+	  var self = this;
+	  return urllib.request(self.url)
+	    .then(function (res) {
+	      return fs.writeFile(self.path, res.data);
+	    });
+	};
+	Checker.prototype.start = function () {
+	  var self = this;
+	  setInterval(function () {
+	    self.shoot().catch(self.onerror); // 捕获 error 时间
+	  }, ms('1s'));
+	};
+	Checker.prototype.onerror = function (err) {
+	  this.emit('error', err);  // 触发 error 事件
+	};
+
+	var checker = new Checker('http://www.tmalxzcsdfl.com/', 'tmall.html');
+					</code></pre>
+				</section>
+				<section>
+					<ul>
+						<li>不要放过任何一个异常</li>
+						<li>默认监听 error 事件</li>
+					</ul>
 				</section>
 			</div>
 		</div>

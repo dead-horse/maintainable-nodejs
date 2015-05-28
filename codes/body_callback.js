@@ -15,18 +15,22 @@ http.createServer(function (req, res) {
 function parseBody(req, callback) {
   rawBody(req, function (err, content) {
     if (err) return callback(err);
-    var body = {};
-    try {
-      body = JSON.parse(content);
 
-      if (!body || typeof body !== 'object') {
-        throw new Error('request body must be object');
-      }
+    var body;
+    try {
+      body = parse(content);
     } catch (err) {
       return callback(err);
     }
     return callback(null, body);
   });
+}
+
+function parse(content) {
+  var body = JSON.parse(content);
+  if (!body || typeof body !== 'object') {
+    throw new Error('request body must be object');
+  }
 }
 
 function rawBody(req, callback) {

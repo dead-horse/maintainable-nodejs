@@ -9,12 +9,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "co": "4.5.4",
     "ms": "0.7.1",
     "mz": "2.0.0",
+    "regenerator": "~0.8.27",
     "sdk-base": "1.0.1",
     "urllib": "2.3.5"
   },
-  "devDependencies": {
-
-  }
+  "devDependencies": {}
 }

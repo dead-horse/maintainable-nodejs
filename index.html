@@ -61,16 +61,27 @@
 					- 不四 @ [天猫前端](https://github.com/tmallfe/tmallfe.github.io/issues)
 					- [dead-horse](https://github.com/dead-horse) @ github
 					- [逗B码农死小马](http://weibo.com/deadhorse) @ 微博
+
+					![](images/tmall.jpg)
 				</section>
 				<section data-markdown>
 					## 为什么我们关注可维护性?
 				</section>
 				<section data-markdown>
-					- 程序是写给人读的，只是偶尔让计算机执行一下
-					- 对别人好点
-					- 对未来的自己好一点
+					> 程序是写给人读的，只是偶尔让计算机执行一下
 				</section>
 
+				<section>
+					<h3>对别人好一点</h3>
+
+					<img src="images/team.jpg" width="700px"></img>
+				</section>
+
+				<section>
+					<h3>对自己好一点</h3>
+
+					<img src="images/code.jpg" width="700px"></img>
+				</section>
 				<section data-markdown>
 					## Code Style
 				</section>
@@ -235,6 +246,11 @@
 					</code></pre>
 				</section>
 				<section>
+					<h4>不要信任任意的输入！</h4>
+					<h3 class="fragment" data-fragment-index="1">不要信任任意的输入！</h3>
+					<h2 class="fragment" data-fragment-index="2">不要信任任意的输入！</h2>
+				</section>
+				<section>
 					<h2><code>Node.js !== </code><span class="yellow-label">callback hell</span></h2>
 					<h3>面向未来的异步编程</h3>
 				</section>
@@ -242,52 +258,121 @@
 				<section>
 					<h2>Callback</h2>
 <pre class="javascript"><code>
-	function getComments(uid) {
-		proxy.getUser(uid, function (err, user) {
-			if (err) return callback(err);
+http.createServer(function (req, res) {
+  parseBody(req, function (err, body) {
+    if (err) {
+      res.statusCode = 500;
+      res.end(err.message);
+      return;
+    }
+    var keys = Object.keys(body);
+    res.end(keys.join(','));
+  });
+}).listen(3000);
 
-			proxy.getPosts(user, function (err, posts) {
-				if (err) return callback(err);
+function parseBody(req, callback) {
+  rawBody(req, function (err, content) {
+    if (err) return callback(err);
 
-				proxy.getComments(user, function (err, comments) {
-					if (err) return callback(err);
+    var body;
+    try {
+      body = parse(content);
+    } catch (err) {
+      return callback(err);
+    }
+    return callback(null, body);
+  });
+}
 
-					callback(null, comments);
-				});
-			});
-		});
-	}
+function parse(content) {
+  var body = JSON.parse(content);
+  if (!body || typeof body !== 'object') {
+    throw new Error('request body must be object');
+  }
+}
 </code></pre>
 				</section>
 
 				<section>
 					<h2>Promise</h2>
 <pre class="javascript"><code>
-	function getComments(uid) {
-		return proxy.getUser(uid)
-			.then(proxy.getPosts.bind(proxy))
-			.then(proxy.getComments.bind(proxy));
+	http.createServer(function (req, res) {
+	  parseBody(req).then(onbody, onerror);
+
+	  function onbody(body) {
+	    var keys = Object.keys(body);
+	    res.end(keys.join(','));
+	  }
+	  function onerror(err) {
+	    res.statusCode = 500;
+	    res.end(err.message);
+	  }
+	}).listen(3000);
+
+	function parseBody(req) {
+	  return rawBody(req).then(parse);
 	}
+	function parse(content) {
+	  var body = JSON.parse(content);
+	  if (!body || typeof body !== 'object') {
+	    throw new Error('request body must be object');
+	  }
+	  return body;
+	}
+
 </code></pre>
 				</section>
 
 				<section>
 					<h2>Generator</h2>
 <pre class="javascript"><code>
-	function getComments* (uid) {
-		var user = yield proxy.getUser(uid);
-		var posts = yield proxy.getPosts(user);
-		return yield proxy.getComments(posts);
+	http.createServer(function (req, res) {
+	  var _parseBody = co.wrap(parseBody);
+	  _parseBody(req).then(onbody, onerror);
+
+	  function onbody(body) {
+	    var keys = Object.keys(body);
+	    res.end(keys.join(','));
+	  }
+	  function onerror(err) {
+	    res.statusCode = 500;
+	    res.end(err.message);
+	  }
+	}).listen(3000);
+
+	function* parseBody(req) {
+	  var content = yield rawBody(req);
+	  var body = JSON.parse(content);
+	  if (!body || typeof body !== 'object') {
+	    throw new Error('request body must be object');
+	  }
+	  return body;
 	}
 </code></pre>
 				</section>
 				<section>
 					<h2>Async & Await</h2>
 <pre class="javascript"><code>
-	async function getComments (uid) {
-		var user = await proxy.getUser(uid);
-		var posts = await proxy.getPosts(user);
-		return await proxy.getComments(posts);
+	http.createServer(function (req, res) {
+	  parseBody(req).then(onbody, onerror);
+
+	  function onbody(body) {
+	    var keys = Object.keys(body);
+	    res.end(keys.join(','));
+	  }
+	  function onerror(err) {
+	    res.statusCode = 500;
+	    res.end(err.message);
+	  }
+	}).listen(3000);
+
+	async function parseBody(req) {
+	  var content = await rawBody(req);
+	  var body = JSON.parse(content);
+	  if (!body || typeof body !== 'object') {
+	    throw new Error('request body must be object');
+	  }
+	  return body;
 	}
 </code></pre>
 				</section>
@@ -448,10 +533,56 @@
 				</section>
 				<section>
 					<ul>
-						<li>不要放过任何一个异常</li>
-						<li>默认监听 error 事件</li>
+						<li style="padding: 5px;">不要忽视任何一个异常</li>
+						<li style="padding: 5px;">无处返回的错误通过事件让外层感知</li>
+						<li style="padding: 5px;">error 事件有默认的监听函数</li>
 					</ul>
 				</section>
+
+				<section>
+					<h2>NPM is Awesome!</h2>
+					<img src="images/npm.png"></img>
+				</section>
+
+				<section>
+					<h3>三行运行本地服务</h3>
+					<br/>
+					<pre class="shell"><code>
+		$ git clone {project_url}
+		$ npm install
+		$ npm start
+					</code></pre>
+				</section>
+				<section>
+					<h3>错误的依赖版本</h3>
+					<br />
+				<pre class="json"><code>
+	"dependencies":{
+		"ejs": ">=0.6.1",
+		"mongoskin":">=0.2.3",
+		"redis":">=0.7.1",
+		"rimraf":">=1.0.9",
+		"socket.io" : ">=0.8.7",
+		"jake" : ">=0.1.22",
+		"connect-mredis" : ">=1.0.6"
+	},
+	"devDependencies" : {
+		"should" : ">=0.4.2",
+		"mocha" : ">=0.8.1"
+	}
+				</code></pre>
+				</section>
+				<section>
+					<h2><a href="http://semver.org/lang/zh-CN/" target="_blank">Semver</a></h2>
+
+					<img src="images/semver.png"></img>
+				</section>
+
+				<section>
+					<h3>如何编写模块依赖版本号</h3>
+					<img src="images/semver_compat.png" height="550px"></img>
+				</section>
+
 				<section>
 					<h1>One More Thing!</h1>
 				</section>

@@ -39,6 +39,9 @@
 			.reveal pre code {
 				max-height: 500px;
 			}
+			.no-border {
+				border: 0px;
+			}
 		</style>
 
 		<!--[if lt IE 9]>
@@ -68,7 +71,7 @@
 					## 为什么我们关注可维护性?
 				</section>
 				<section data-markdown>
-					> 程序是写给人读的，只是偶尔让计算机执行一下
+					> Most of out time is spent maintaining code
 				</section>
 
 				<section>
@@ -586,6 +589,48 @@ function parse(content) {
 					<img src="images/semver_compat.png" height="550px"></img>
 				</section>
 
+				<section>
+					<h3>One More Thing...</h3>
+					<h3 class="fragment" data-fragment-index="2"><span class="yellow-label">单元测试</span></h3>
+				</section>
+				<section>
+					<pre class="javascript"><code>
+	describe('ctx.path', function(){
+	  it('should return the pathname', function(){
+	    var ctx = context();
+	    ctx.url = '/login?next=/dashboard';
+	    ctx.path.should.equal('/login');
+	  })
+	})
+
+	describe('ctx.path=', function(){
+	  it('should set the pathname', function(){
+	    var ctx = context();
+	    ctx.url = '/login?next=/dashboard';
+
+	    ctx.path = '/logout';
+	    ctx.path.should.equal('/logout');
+	    ctx.url.should.equal('/logout?next=/dashboard');
+	  })
+
+	  it('should change .url but not .originalUrl', function(){
+	    var ctx = context({ url: '/login' });
+	    ctx.path = '/logout';
+	    ctx.url.should.equal('/logout');
+	    ctx.originalUrl.should.equal('/login');
+	    ctx.request.originalUrl.should.equal('/login');
+	  })
+	})
+					</code></pre>
+				</section>
+				<section>
+					<img src="images/test.png" style="border: 2px;"></img>
+					<img src="images/coverage.png"></img>
+				</section>
+				<section>
+					<h3>持续集成</h3>
+					<img src="images/travis.png"></img>
+				</section>
 				<section>
 					<h3>懂这么多道理，却依然写不好 <span class="yellow-label">node</span></h3>
 				</section>

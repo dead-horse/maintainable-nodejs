@@ -392,7 +392,7 @@ function parse(content) {
 					<h2><span class="yellow-label">Error Handle</span></h2>
 				</section>
 				<section>
-					<h3> 异步回调第一个函数必须是错误对象</h3>
+					<h3> 异步回调第一个参数必须是错误对象</h3>
 					<pre class="javascript"><code>
 		fs.readFile('foo.txt', function (err, content) {
 			if (err) return onerror(err);

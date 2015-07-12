@@ -1,4 +1,4 @@
-var Base = require('sdk-base');
+var EventEmitter = require('events').EventEmitter;
 var urllib = require('urllib');
 var util = require('util');
 var fs = require('mz/fs');
@@ -9,9 +9,15 @@ function Checker(url, path) {
   this.path = path;
   this.onerror = this.onerror.bind(this);
   this.start();
-  Base.call(this);  // 继承 sdk-base
+  EventEmitter.call(this);
+  setImmediate(function () {
+    if (!this.listeners('error').length) {
+      this.on('error', defaultErrorHandler);
+    }
+  }.bind(this));
 };
-util.inherits(Checker, Base);
+
+util.inherits(Checker, EventEmitter);
 
 Checker.prototype.shoot = function () {
   var self = this;
@@ -26,10 +32,14 @@ Checker.prototype.start = function () {
     self.shoot().catch(self.onerror); // 捕获 error 时间
   }, ms('1s'));
 };
+
 Checker.prototype.onerror = function (err) {
   this.emit('error', err);  // 触发 error 事件
 };
 
-var checker = new Checker('http://www.tmalxzcsdfl.com/', 'tmall.html');
+function defaultErrorHandler(err) {
+  console.error(err.stack);
+}
 
+var checker = new Checker('http://www.tmalxzcsdfl.com/', 'tmall.html');
 function noop() {}

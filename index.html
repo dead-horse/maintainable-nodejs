@@ -171,8 +171,7 @@
 				<section>
 					<pre class="javascript"><code>
 	http.createServer(function (req, res) {
-	  parseBody(req, onBody);
-	  function onBody(err, body) {
+	  parseBody(req, function onBody(err, body) {
 	    if (err) {
 	      res.statusCode = 500;
 	      return res.end(err.message);
@@ -253,8 +252,7 @@
 					<h2>Callback</h2>
 <pre class="javascript"><code>
 	http.createServer(function (req, res) {
-	  parseBody(req, onBody);
-	  function onBody(err, body) {
+	  parseBody(req, function onBody(err, body) {
 	    if (err) {
 	      res.statusCode = 500;
 	      return res.end(err.message);
@@ -467,11 +465,7 @@ http.createServer(function (req, res) {
 	};
 
 	Checker.prototype.shoot = function () {
-	  var self = this;
-	  return urllib.request(self.url)
-	    .then(function (res) {
-	      return fs.writeFile(self.path, res.data);
-	    });
+	  // ...
 	};
 	Checker.prototype.start = function () {
 	  var self = this;
@@ -500,11 +494,7 @@ http.createServer(function (req, res) {
 	util.inherits(Checker, EventEmitter);
 
 	Checker.prototype.shoot = function () {
-	  var self = this;
-	  return urllib.request(self.url)
-	    .then(function (res) {
-	      return fs.writeFile(self.path, res.data);
-	    });
+	  // ...
 	};
 	Checker.prototype.start = function () {
 	  var self = this;
@@ -519,39 +509,41 @@ http.createServer(function (req, res) {
 	var checker = new Checker('http://www.tmall.com', 'tmall.html');
 					</code></pre>
 				</section>
-<!-- 				<section data-transition="fade-in slide-out">
-					<h3><a href="https://github.com/node-modules/sdk-base" target="_blank">sdk-base</a></h3>
+				<section data-transition="fade-in fade-out">
+					<h3>默认的错误监听函数</h3>
 					<pre class="javascript"><code  style="height:570px; max-height: 570px">
-	var Base = require('sdk-base');
 	function Checker(url, path) {
 	  this.url = url;
 	  this.path = path;
 	  this.onerror = this.onerror.bind(this);
 	  this.start();
-	  Base.call(this);  // 继承 sdk-base
+	  EventEmitter.call(this);
+	  // 添加默认的错误监听函数
+	  setImmediate(function () {
+	    if (!this.listeners('error').length) {
+	      this.on('error', defaultErrorHandler);
+	    }
+	  }.bind(this));
 	};
-	util.inherits(Checker, Base);
+
+	util.inherits(Checker, EventEmitter);
 
 	Checker.prototype.shoot = function () {
-	  var self = this;
-	  return urllib.request(self.url)
-	    .then(function (res) {
-	      return fs.writeFile(self.path, res.data);
-	    });
+	  // ...
 	};
 	Checker.prototype.start = function () {
-	  var self = this;
-	  setInterval(function () {
-	    self.shoot().catch(self.onerror); // 捕获 error 时间
-	  }, ms('1s'));
+	  // ...
 	};
 	Checker.prototype.onerror = function (err) {
 	  this.emit('error', err);  // 触发 error 事件
 	};
+	function defaultErrorHandler(err) {
+	  console.error(err.stack);
+	}
 
 	var checker = new Checker('http://www.tmalxzcsdfl.com/', 'tmall.html');
 					</code></pre>
-				</section> -->
+				</section>
 				<section>
 					<ul>
 						<li style="padding: 5px;">不要忽视任何一个异常</li>

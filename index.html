@@ -68,7 +68,7 @@
 					![](images/tmall.jpg)
 				</section>
 				<section data-markdown>
-					## 为什么我们关注可维护性?
+					## Why do we care about ___maintainable___?
 				</section>
 				<section data-markdown>
 					> Most of our time is spent maintaining code
@@ -98,20 +98,9 @@
 					<h3> that is the question</h3>
 				</section>
 				<section data-markdown>
-					#### 关键不在于选择哪种格式，而在于团队统一
+					#### [Standard](https://github.com/feross/standard)
 
-					- [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript)
-					- [Node.js Style Guide](https://github.com/felixge/node-style-guide)
-					- [Google JavaScript Style Guide](https://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)
-				</section>
-				<section data-markdown>
-					#### 必要时采取强制措施
-
-					- [jsLint](http://www.jslint.com/)
-					- [jsHint](http://jshint.com/)
-					- [esLint](http://eslint.org/)
-					- [jscs](http://jscs.info/)
-					- [standard](https://github.com/feross/standard)
+					![](images/standard.png)
 				</section>
 
 				<section>
@@ -182,14 +171,15 @@
 				<section>
 					<pre class="javascript"><code>
 	http.createServer(function (req, res) {
-	  parseBody(req, function (err, body) {
+	  parseBody(req, onBody);
+	  function onBody(err, body) {
 	    if (err) {
 	      res.statusCode = 500;
 	      return res.end(err.message);
 	    }
-	    var keys = Object.keys(body).join(',');
-	    res.end(keys);
-	  });
+	    var keys = Object.keys(body);
+	    res.end(keys.join(','));
+	  }
 	}).listen(3000);
 
 	function parseBody(req, callback) {
@@ -262,38 +252,66 @@
 				<section>
 					<h2>Callback</h2>
 <pre class="javascript"><code>
+	http.createServer(function (req, res) {
+	  parseBody(req, onBody);
+	  function onBody(err, body) {
+	    if (err) {
+	      res.statusCode = 500;
+	      return res.end(err.message);
+	    }
+	    var keys = Object.keys(body);
+	    res.end(keys.join(','));
+	  }
+	}).listen(3000);
+
+	function parseBody(req, callback) {
+	  rawBody(req, function (err, content) {
+	    if (err) return callback(err);
+
+	    var body;
+	    try {
+	      body = parse(content);
+	    } catch (err) {
+	      return callback(err);
+	    }
+	    return callback(null, body);
+	  });
+	}
+
+	function parse(content) {
+	  var body = JSON.parse(content);
+	  if (!body || typeof body !== 'object') {
+	    throw new Error('request body must be object');
+	  }
+	}
+</code></pre>
+				</section>
+				<section>
+					<h2>Callback Hell</h2>
+<pre class="javascript"><code>
 http.createServer(function (req, res) {
-  parseBody(req, function (err, body) {
+  rawBody(req, function (err, content) {
     if (err) {
-      res.statusCode = 500;
+      res.status = 500;
       res.end(err.message);
-      return;
+    } else {
+      var body;
+      try {
+        body = JSON.parse(content);
+        if (!body || typeof body !== 'object') {
+          throw new Error('request body must be object');
+        }
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(err.message);
+        return;
+      }
+      var keys = Object.keys(body);
+      res.end(keys.join(','));
     }
-    var keys = Object.keys(body);
-    res.end(keys.join(','));
   });
 }).listen(3000);
 
-function parseBody(req, callback) {
-  rawBody(req, function (err, content) {
-    if (err) return callback(err);
-
-    var body;
-    try {
-      body = parse(content);
-    } catch (err) {
-      return callback(err);
-    }
-    return callback(null, body);
-  });
-}
-
-function parse(content) {
-  var body = JSON.parse(content);
-  if (!body || typeof body !== 'object') {
-    throw new Error('request body must be object');
-  }
-}
 </code></pre>
 				</section>
 
@@ -302,7 +320,6 @@ function parse(content) {
 <pre class="javascript"><code>
 	http.createServer(function (req, res) {
 	  parseBody(req).then(onbody, onerror);
-
 	  function onbody(body) {
 	    var keys = Object.keys(body);
 	    res.end(keys.join(','));
@@ -393,7 +410,7 @@ function parse(content) {
 					<h2><span class="yellow-label">Error Handle</span></h2>
 				</section>
 				<section>
-					<h3> 异步回调第一个参数必须是错误对象</h3>
+					<h3>Callback 第一个参数必须是 Error</h3>
 					<pre class="javascript"><code>
 		fs.readFile('foo.txt', function (err, content) {
 			if (err) return onerror(err);
@@ -402,7 +419,7 @@ function parse(content) {
 					</code></pre>
 				</section>
 				<section>
-					<h3>字符串不是错误</h3>
+					<h3>字符串不是异常</h3>
 					<pre class="javascript"><code>
 		if (!body) throw 'body not exist'; // wrong!
 
@@ -414,7 +431,7 @@ function parse(content) {
 					</code></pre>
 				</section>
 				<section data-transition="slide-in fade-out">
-					<h3>通过错误事件抛出错误</h3>
+					<h3>没有 Callback 如何处理异常？</h3>
 					<pre class="javascript"><code  style="height:570px; max-height: 570px">
 	function Checker(url, path) {
 	  this.url = url;
@@ -440,7 +457,7 @@ function parse(content) {
 					</code></pre>
 				</section>
 				<section data-transition="fade-in fade-out">
-					<h3>通过错误事件抛出错误</h3>
+					<h3>直接输出异常？</h3>
 					<pre class="javascript"><code  style="height:570px; max-height: 570px">
 	function Checker(url, path) {
 	  this.url = url;
@@ -459,7 +476,7 @@ function parse(content) {
 	Checker.prototype.start = function () {
 	  var self = this;
 	  setInterval(function () {
-	    self.shoot().catch(self.onerror); // 捕获 error 时间
+	    self.shoot().catch(self.onerror); // 捕获 error
 	  }, ms('1s'));
 	};
 	Checker.prototype.onerror = function (err) {
@@ -471,7 +488,7 @@ function parse(content) {
 				</section>
 
 				<section data-transition="fade-in fade-out">
-					<h3>通过错误事件抛出错误</h3>
+					<h3>通过事件抛出异常</h3>
 					<pre class="javascript"><code  style="height:570px; max-height: 570px">
 	function Checker(url, path) {
 	  this.url = url;
@@ -502,7 +519,7 @@ function parse(content) {
 	var checker = new Checker('http://www.tmall.com', 'tmall.html');
 					</code></pre>
 				</section>
-				<section data-transition="fade-in slide-out">
+<!-- 				<section data-transition="fade-in slide-out">
 					<h3><a href="https://github.com/node-modules/sdk-base" target="_blank">sdk-base</a></h3>
 					<pre class="javascript"><code  style="height:570px; max-height: 570px">
 	var Base = require('sdk-base');
@@ -534,7 +551,7 @@ function parse(content) {
 
 	var checker = new Checker('http://www.tmalxzcsdfl.com/', 'tmall.html');
 					</code></pre>
-				</section>
+				</section> -->
 				<section>
 					<ul>
 						<li style="padding: 5px;">不要忽视任何一个异常</li>
@@ -543,7 +560,7 @@ function parse(content) {
 					</ul>
 				</section>
 
-				<section>
+				<!-- <section>
 					<h2>NPM is Awesome!</h2>
 					<img src="images/npm.png"></img>
 				</section>
@@ -588,7 +605,7 @@ function parse(content) {
 				<section>
 					<h3>如何编写模块依赖版本号</h3>
 					<img src="images/semver_compat.png" height="550px"></img>
-				</section>
+				</section> -->
 
 				<section>
 					<h3>One More Thing...</h3>
@@ -642,7 +659,6 @@ function parse(content) {
 				</section>
 				<section>
 					<h2><code>console.log('Thanks!');</code></h2>
-					<h2><code>process.exit(0);</code></h2>
 				</section>
 			</div>
 		</div>

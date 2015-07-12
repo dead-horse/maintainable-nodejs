@@ -1,7 +1,8 @@
 var http = require('http');
 
 http.createServer(function (req, res) {
-  parseBody(req, function (err, body) {
+  parseBody(req, onBody);
+  function onBody(err, body) {
     if (err) {
       res.statusCode = 500;
       res.end(err.message);
@@ -9,7 +10,7 @@ http.createServer(function (req, res) {
     }
     var keys = Object.keys(body);
     res.end(keys.join(','));
-  });
+  }
 }).listen(3000);
 
 function parseBody(req, callback) {
